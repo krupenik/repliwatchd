@@ -8,7 +8,7 @@ PIDFILE = '/var/run/repliwatchd.pid'
 LOGFILE = '/var/log/repliwatchd.log'
 MAX_INTERVAL = 60
 
-def generic_log message
+def log message
   open(LOGFILE, 'a') do |f|
     f.printf("%s %s[%d]: %s\n" % [Time.now.strftime("%c"), $0, Process.pid, message.to_s])
   end
@@ -41,10 +41,6 @@ class RepliWatchDaemon
       sleep @interval
       retry
     end
-  end
-
-  def log message
-    generic_log message
   end
 
   def skip_statements n
@@ -89,6 +85,6 @@ end
 begin
   RepliWatchDaemon.new.start
 rescue => e
-  generic_log e
+  log e
 end
 
