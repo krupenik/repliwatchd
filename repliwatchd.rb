@@ -38,7 +38,7 @@ class RepliWatchDaemon
     begin
       @dbh = Mysql2::Client.new(username: ini['client']['user'], password: ini['client']['password'])
     rescue Mysql2::Error
-      sleep @interval
+      sleep_interval
       retry
     end
   end
@@ -53,7 +53,7 @@ class RepliWatchDaemon
     if 'yes' != slave_status['Slave_SQL_Running'].downcase
       if [1032, 1062].include? slave_status['Last_SQL_Errno'].to_i
         skip_statements 1
-        @interval = 0
+        reset_interval
       end
 
       log slave_status['Last_SQL_Error']
@@ -63,8 +63,16 @@ class RepliWatchDaemon
   def check_io_running slave_status
     if 'yes' != slave_status['Slave_IO_Running'].downcase
       log slave_status['Last_IO_Error']
-      @interval = 0
+      reset_interval
     end
+  end
+
+  def reset_interval
+    @interval = -1
+  end
+
+  def sleep_interval
+    sleep @interval = (@interval += 1) > MAX_INTERVAL ? MAX_INTERVAL : @interval < 0 ? 0 : @interval
   end
 
   def serve
@@ -77,7 +85,7 @@ class RepliWatchDaemon
       check_sql_running slave_status
       check_io_running slave_status
 
-      sleep @interval = (@interval += 1) > MAX_INTERVAL ? MAX_INTERVAL : @interval
+      sleep_interval
     end
   end
 end
